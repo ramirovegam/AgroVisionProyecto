@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Tomates</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    
+<h1>🍅 AGROVISION - Panel de Estado de Tomates🍅</h1>
+
+<div class="card counter">
+    <strong>Total de detectados:</strong>
+    <span id="total">0</span>
+</div>
+
+<div id="lista"></div>
+
+</div>
+
+<script>
+function actualizar() {
+    fetch("/data")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("total").innerText = data.total;
+
+            const lista = document.getElementById("lista");
+            lista.innerHTML = "";
+
+            data.tomates.forEach(t => {
+                const div = document.createElement("div");
+                div.className = "card";
+
+                let clase = "desc";
+                if (t.estado === "Maduro") clase = "maduro";
+                if (t.estado === "No maduro") clase = "verde";
+
+                div.innerHTML = `
+                    <strong>ID:</strong> ${t.id}<br>
+                    <strong>Estado:</strong>
+                    <span class="estado ${clase}">${t.estado}</span>
+                `;
+                lista.appendChild(div);
+            });
+        });
+}
+
+setInterval(actualizar, 1000);
+</script>
+
+</body>
+</html>
