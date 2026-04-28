@@ -2,13 +2,10 @@ import cv2
 import time
 import threading
 
-from camera import get_frame
+from camera import get_frame, release_camera
 from detector import detect_tomatoes
 from tracker import update_tracker
-from classifier import classify_tomato
-
 from dashboard import update_dashboard, run_dashboard
-
 
 # ===============================
 # CONFIGURACIÓN
@@ -18,22 +15,22 @@ EXIT_KEY = 27  # ESC
 FPS_LIMIT = 30
 
 COLORS = {
-    "Maduro": (0, 0, 255),
-    "No maduro": (0, 255, 0),
-    "Desconocido": (200, 200, 200),
+    "maduro": (0, 0, 255),        # rojo
+    "verde": (0, 255, 0),         # verde
+    "defectuoso": (0, 165, 255),  # naranja
+    "desconocido": (200, 200, 200)
 }
-
 
 # ===============================
 # MAIN
 # ===============================
 
 def main():
-    print("✅ Sistema de visión iniciado...")
+    print("✅ Sistema AgroVision iniciado")
 
-    # -------------------------------------------------
-    # INICIAR DASHBOARD WEB (ANTES DE OPENCV)
-    # -------------------------------------------------
+    # -------------------------------
+    # INICIAR DASHBOARD FLASK
+    # -------------------------------
     dashboard_thread = threading.Thread(
         target=run_dashboard,
         daemon=True
@@ -42,34 +39,44 @@ def main():
 
     last_time = time.time()
 
-    # -------------------------------------------------
+    # Diccionario para asociar ID ↔ estado (último conocido)
+    track_states = {}
+
+    # -------------------------------
     # LOOP PRINCIPAL
-    # -------------------------------------------------
+    # -------------------------------
     while True:
         frame = get_frame()
         if frame is None:
             print("❌ No se pudo obtener frame de la cámara")
             break
 
-        # 1. Detección
+        # 1. Detección YOLO (devuelve estado directamente)
         detections = detect_tomatoes(frame)
 
-        # 2. Seguimiento
+        # 2. Tracking (solo coordenadas)
         tracks = update_tracker(detections)
 
-        # 3. Clasificación + dibujo
+        # 3. Asociar detección YOLO con track ID
+        for det in detections:
+            x1, y1, x2, y2, estado, conf = det
+
+            for trk in tracks:
+                tx1, ty1, tx2, ty2, track_id = trk
+
+                # Asociación simple por cercanía (suficiente para este proyecto)
+                if abs(x1 - tx1) < 20 and abs(y1 - ty1) < 20:
+                    track_states[track_id] = estado
+
+        # 4. Dibujar resultados y enviar datos al dashboard
         datos_dashboard = []
 
-        for track in tracks:
-            x1, y1, x2, y2, track_id = track
+        for trk in tracks:
+            x1, y1, x2, y2, track_id = trk
+            estado = track_states.get(track_id, "desconocido")
+            color = COLORS.get(estado, COLORS["desconocido"])
 
-            if x2 <= x1 or y2 <= y1:
-                estado = "Desconocido"
-            else:
-                estado = classify_tomato(frame, track)
-
-            color = COLORS.get(estado, (255, 255, 255))
-
+            # Dibujar bounding box
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(
                 frame,
@@ -78,7 +85,7 @@ def main():
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
                 color,
-                2,
+                2
             )
 
             datos_dashboard.append({
@@ -86,10 +93,10 @@ def main():
                 "estado": estado
             })
 
-        # 4. Actualizar dashboard
+        # 5. Actualizar dashboard (con historial acumulado)
         update_dashboard(datos_dashboard)
 
-        # 5. Mostrar FPS
+        # 6. Mostrar FPS
         current_time = time.time()
         fps = 1 / max(current_time - last_time, 1e-6)
         last_time = current_time
@@ -101,10 +108,10 @@ def main():
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (255, 255, 0),
-            2,
+            2
         )
 
-        # 6. Ventana OpenCV
+        # 7. Mostrar ventana OpenCV
         cv2.imshow("AgroVision - Tomates", frame)
 
         if cv2.waitKey(1) & 0xFF == EXIT_KEY:
@@ -113,7 +120,11 @@ def main():
 
         time.sleep(max(0, (1 / FPS_LIMIT) - (time.time() - current_time)))
 
+    # -------------------------------
+    # LIMPIEZA
+    # -------------------------------
     cv2.destroyAllWindows()
+    release_camera()
     print("✅ Sistema cerrado correctamente")
 
 
