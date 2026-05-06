@@ -6,7 +6,7 @@ from ultralytics import YOLO
 # ===============================
 
 # Ruta a tu modelo entrenado en Roboflow
-MODEL_PATH = "models/tomate_yolov8.pt"  
+MODEL_PATH = "models/best.pt"  
 
 # Confianza mínima para aceptar detecciones
 CONF_THRESHOLD = 0.4
