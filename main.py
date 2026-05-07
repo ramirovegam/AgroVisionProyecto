@@ -13,6 +13,8 @@ from dashboard import update_dashboard, run_dashboard
 EXIT_KEY = 27  # ESC
 FPS_LIMIT = 30
 
+WINDOW_NAME = "AgroVision - Tomates"
+
 COLORS = {
     "maduro": (0, 0, 255),       # rojo
     "verde": (0, 255, 0),        # verde
@@ -91,7 +93,7 @@ def main():
                 2
             )
 
-            # Agregar datos para dashboard ✅ (con confianza)
+            # Datos para dashboard
             datos_dashboard.append({
                 "id": track_id,
                 "estado": estado,
@@ -117,10 +119,16 @@ def main():
         )
 
         # ===== 7. MOSTRAR VENTANA =====
-        cv2.imshow("AgroVision - Tomates", frame)
+        cv2.imshow(WINDOW_NAME, frame)
 
+        # 🔴 Detectar cierre con la X
+        if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
+            print("🛑 Ventana cerrada por el usuario")
+            break
+
+        # 🔴 Detectar tecla ESC
         if cv2.waitKey(1) & 0xFF == EXIT_KEY:
-            print("🛑 Sistema detenido por el usuario")
+            print("🛑 Sistema detenido por ESC")
             break
 
         # Limitar FPS
@@ -138,4 +146,10 @@ def main():
 # ENTRY POINT
 # ===============================
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n🛑 Programa interrumpido con CTRL+C")
+    finally:
+        cv2.destroyAllWindows()
+        release_camera()
