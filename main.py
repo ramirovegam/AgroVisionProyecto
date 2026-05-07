@@ -16,9 +16,9 @@ FPS_LIMIT = 30
 WINDOW_NAME = "AgroVision - Tomates"
 
 COLORS = {
-    "maduro": (0, 0, 255),       # rojo
-    "verde": (0, 255, 0),        # verde
-    "defectuoso": (0, 165, 255), # naranja
+    "maduro": (0, 0, 255),
+    "verde": (0, 255, 0),
+    "defectuoso": (0, 165, 255),
     "desconocido": (200, 200, 200)
 }
 
@@ -28,7 +28,7 @@ COLORS = {
 def main():
     print("✅ Sistema AgroVision iniciado")
 
-    # ===== INICIAR DASHBOARD =====
+    # ===== DASHBOARD =====
     dashboard_thread = threading.Thread(
         target=run_dashboard,
         daemon=True
@@ -37,9 +37,12 @@ def main():
 
     last_time = time.time()
 
-    # Diccionario para guardar estado por ID
     track_states = {}
     track_conf = {}
+
+    # 🔥 NUEVO: control de detección
+    frame_count = 0
+    last_detections = []
 
     # ===============================
     # LOOP PRINCIPAL
@@ -48,28 +51,41 @@ def main():
         frame = get_frame()
 
         if frame is None:
-            print("❌ No se pudo obtener frame de la cámara")
+            print("❌ No se pudo obtener frame")
             break
 
-        # ===== 1. DETECCIÓN =====
-        detections = detect_tomatoes(frame)
+        frame_count += 1
 
-        # ===== 2. TRACKING =====
+        # ===============================
+        # 🔥 DETECCIÓN OPTIMIZADA
+        # ===============================
+        if frame_count % 2 == 0:
+            detections = detect_tomatoes(frame)
+            last_detections = detections
+        else:
+            detections = last_detections
+
+        # ===============================
+        # TRACKING
+        # ===============================
         tracks = update_tracker(detections)
 
-        # ===== 3. ASOCIAR DETECCIONES CON TRACK IDs =====
+        # ===============================
+        # ASOCIACIÓN
+        # ===============================
         for det in detections:
             x1, y1, x2, y2, estado, conf = det
 
             for trk in tracks:
                 tx1, ty1, tx2, ty2, track_id = trk
 
-                # Asociación simple (cercanía)
                 if abs(x1 - tx1) < 20 and abs(y1 - ty1) < 20:
                     track_states[track_id] = estado
                     track_conf[track_id] = conf
 
-        # ===== 4. DIBUJAR + PREPARAR DASHBOARD =====
+        # ===============================
+        # DIBUJADO
+        # ===============================
         datos_dashboard = []
 
         for trk in tracks:
@@ -80,12 +96,13 @@ def main():
 
             color = COLORS.get(estado, COLORS["desconocido"])
 
-            # Dibujar bounding box
+            # Bounding box
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
 
+            # Texto
             cv2.putText(
                 frame,
-                f"ID {track_id} - {estado} ({conf:.2f})",
+                f"{estado} ({conf:.2f})",
                 (x1, max(y1 - 10, 20)),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
@@ -93,17 +110,20 @@ def main():
                 2
             )
 
-            # Datos para dashboard
             datos_dashboard.append({
                 "id": track_id,
                 "estado": estado,
                 "conf": conf
             })
 
-        # ===== 5. ACTUALIZAR DASHBOARD =====
+        # ===============================
+        # DASHBOARD
+        # ===============================
         update_dashboard(datos_dashboard)
 
-        # ===== 6. FPS =====
+        # ===============================
+        # FPS
+        # ===============================
         current_time = time.time()
         fps = 1 / max(current_time - last_time, 1e-6)
         last_time = current_time
@@ -118,20 +138,22 @@ def main():
             2
         )
 
-        # ===== 7. MOSTRAR VENTANA =====
+        # ===============================
+        # MOSTRAR
+        # ===============================
         cv2.imshow(WINDOW_NAME, frame)
 
-        # 🔴 Detectar cierre con la X
+        # cerrar ventana
         if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
-            print("🛑 Ventana cerrada por el usuario")
+            print("🛑 Ventana cerrada")
             break
 
-        # 🔴 Detectar tecla ESC
+        # tecla ESC
         if cv2.waitKey(1) & 0xFF == EXIT_KEY:
-            print("🛑 Sistema detenido por ESC")
+            print("🛑 Detenido por ESC")
             break
 
-        # Limitar FPS
+        # limitar FPS
         time.sleep(max(0, (1 / FPS_LIMIT) - (time.time() - current_time)))
 
     # ===============================
@@ -139,8 +161,7 @@ def main():
     # ===============================
     cv2.destroyAllWindows()
     release_camera()
-    print("✅ Sistema cerrado correctamente")
-
+    print("✅ Sistema cerrado")
 
 # ===============================
 # ENTRY POINT
@@ -149,7 +170,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n🛑 Programa interrumpido con CTRL+C")
+        print("\n🛑 CTRL+C")
     finally:
         cv2.destroyAllWindows()
         release_camera()

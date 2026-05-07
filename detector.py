@@ -20,6 +20,10 @@ YOLO_IMG_SIZE = 640
 
 print("📦 Cargando modelo YOLO...")
 model = YOLO(MODEL_PATH)
+
+# 🔥 activar GPU
+model.to("cuda")
+
 print("✅ Modelo YOLO cargado correctamente")
 
 # ===============================
