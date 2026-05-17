@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
 # Ruta correcta
-data = "tomates_yolo.v5i.yolov8/data.yaml"
+data = "tomates_yolo.v6i.yolov8\data.yaml"
 
 # Cargar modelo
 model = YOLO("yolov8n.pt")
