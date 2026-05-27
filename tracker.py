@@ -6,9 +6,9 @@ from sort import Sort
 # ===============================
 
 tracker = Sort(
-    max_age=40,
-    min_hits=1,
-    iou_threshold=0.2
+    max_age=60,
+    min_hits=2,
+    iou_threshold=0.1
 )
 
 # ===============================

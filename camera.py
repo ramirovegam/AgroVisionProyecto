@@ -6,8 +6,8 @@ import time
 # ===============================
 
 CAMERA_INDEX = 0
-FRAME_WIDTH = 1920    # 1080p
-FRAME_HEIGHT = 1080
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
 TARGET_FPS = 30
 
 # ===============================

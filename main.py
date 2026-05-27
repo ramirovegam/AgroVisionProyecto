@@ -1,11 +1,9 @@
 import cv2
 import time
-import threading
 
 from camera import get_frame, release_camera
 from detector import detect_tomatoes
 from tracker import update_tracker
-from dashboard import update_dashboard, run_dashboard
 
 # ===============================
 # CONFIGURACIÓN
@@ -28,19 +26,11 @@ COLORS = {
 def main():
     print("✅ Sistema AgroVision iniciado")
 
-    # ===== DASHBOARD =====
-    dashboard_thread = threading.Thread(
-        target=run_dashboard,
-        daemon=True
-    )
-    dashboard_thread.start()
-
     last_time = time.time()
 
     track_states = {}
     track_conf = {}
 
-    # 🔥 NUEVO: control de detección
     frame_count = 0
     last_detections = []
 
@@ -57,9 +47,9 @@ def main():
         frame_count += 1
 
         # ===============================
-        # 🔥 DETECCIÓN OPTIMIZADA
+        # DETECCIÓN OPTIMIZADA
         # ===============================
-        if frame_count % 2 == 0:
+        if frame_count % 1 == 0:
             detections = detect_tomatoes(frame)
             last_detections = detections
         else:
@@ -79,15 +69,13 @@ def main():
             for trk in tracks:
                 tx1, ty1, tx2, ty2, track_id = trk
 
-                if abs(x1 - tx1) < 20 and abs(y1 - ty1) < 20:
+                if abs(x1 - tx1) < 50 and abs(y1 - ty1) <   50:
                     track_states[track_id] = estado
                     track_conf[track_id] = conf
 
         # ===============================
         # DIBUJADO
         # ===============================
-        datos_dashboard = []
-
         for trk in tracks:
             x1, y1, x2, y2, track_id = trk
 
@@ -109,17 +97,6 @@ def main():
                 color,
                 2
             )
-
-            datos_dashboard.append({
-                "id": track_id,
-                "estado": estado,
-                "conf": conf
-            })
-
-        # ===============================
-        # DASHBOARD
-        # ===============================
-        update_dashboard(datos_dashboard)
 
         # ===============================
         # FPS
@@ -154,7 +131,7 @@ def main():
             break
 
         # limitar FPS
-        time.sleep(max(0, (1 / FPS_LIMIT) - (time.time() - current_time)))
+        #time.sleep(max(0, (1 / FPS_LIMIT) - (time.time() - current_time)))
 
     # ===============================
     # LIMPIEZA
