@@ -1,11 +1,9 @@
 import cv2
 import time
-import threading
 
 from camera import get_frame, release_camera
 from detector import detect_tomatoes
 from tracker import update_tracker
-from dashboard import update_dashboard, run_dashboard
 
 # ===============================
 # CONFIGURACIÓN
@@ -26,21 +24,13 @@ COLORS = {
 # MAIN
 # ===============================
 def main():
-    print("✅ Sistema AgroVision iniciado")
-
-    # ===== DASHBOARD =====
-    dashboard_thread = threading.Thread(
-        target=run_dashboard,
-        daemon=True
-    )
-    dashboard_thread.start()
+    print("✅ Sistema AgroVision iniciado (sin dashboard)")
 
     last_time = time.time()
 
     track_states = {}
     track_conf = {}
 
-    # 🔥 NUEVO: control de detección
     frame_count = 0
     last_detections = []
 
@@ -57,7 +47,7 @@ def main():
         frame_count += 1
 
         # ===============================
-        # 🔥 DETECCIÓN OPTIMIZADA
+        # DETECCIÓN OPTIMIZADA
         # ===============================
         if frame_count % 2 == 0:
             detections = detect_tomatoes(frame)
@@ -86,8 +76,6 @@ def main():
         # ===============================
         # DIBUJADO
         # ===============================
-        datos_dashboard = []
-
         for trk in tracks:
             x1, y1, x2, y2, track_id = trk
 
@@ -96,10 +84,8 @@ def main():
 
             color = COLORS.get(estado, COLORS["desconocido"])
 
-            # Bounding box
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
 
-            # Texto
             cv2.putText(
                 frame,
                 f"{estado} ({conf:.2f})",
@@ -109,17 +95,6 @@ def main():
                 color,
                 2
             )
-
-            datos_dashboard.append({
-                "id": track_id,
-                "estado": estado,
-                "conf": conf
-            })
-
-        # ===============================
-        # DASHBOARD
-        # ===============================
-        update_dashboard(datos_dashboard)
 
         # ===============================
         # FPS
@@ -143,17 +118,14 @@ def main():
         # ===============================
         cv2.imshow(WINDOW_NAME, frame)
 
-        # cerrar ventana
         if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
             print("🛑 Ventana cerrada")
             break
 
-        # tecla ESC
         if cv2.waitKey(1) & 0xFF == EXIT_KEY:
             print("🛑 Detenido por ESC")
             break
 
-        # limitar FPS
         time.sleep(max(0, (1 / FPS_LIMIT) - (time.time() - current_time)))
 
     # ===============================
