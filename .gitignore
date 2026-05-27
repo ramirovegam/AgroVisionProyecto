@@ -1,6 +1,8 @@
+# Entornos virtuales
 venv/
+venv_gpu/
+.env/
+
+# Python
 __pycache__/
 *.pyc
-*.pyd
-*.dll
-.env
