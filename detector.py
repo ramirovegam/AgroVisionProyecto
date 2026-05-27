@@ -26,7 +26,8 @@ import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
-
+print("GPU disponible:", torch.cuda.is_available())
+print("Dispositivo usado:", device)
 
 print("✅ Modelo YOLO cargado correctamente")
 
