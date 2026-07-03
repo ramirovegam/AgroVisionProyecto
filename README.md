@@ -31,7 +31,7 @@ El sistema está diseñado para automatizar procesos de inspección agrícola, p
 
 ### Video
 
-[Ver demostración](https://youtu.be/TU_VIDEO)
+<img src="capturafuncionamiento.png" width="700">
 
 
 ---
