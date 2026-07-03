@@ -29,8 +29,6 @@ El sistema está diseñado para automatizar procesos de inspección agrícola, p
 
 ## Demostración
 
-### Video
-
 <img src="capturafuncionamiento.png" width="700">
 
 
